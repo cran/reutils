@@ -1,0 +1,5 @@
+library(testthat)
+library(reutils)
+opts <- options(reutils.verbose.queries = FALSE, reutils.email = "test@mail.com")
+test_package("reutils")
+options(opts)
