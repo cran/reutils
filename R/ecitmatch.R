@@ -1,7 +1,6 @@
 #' @include eutil.R
 NULL
 
-
 #' @export
 .ecitmatch <- setRefClass(
   Class = "ecitmatch",
@@ -29,14 +28,12 @@ NULL
   )
 )
 
-
-#' @rdname content-methods
+#' @rdname content
 #' @export
 setMethod("content", "ecitmatch", function(x, as="text", ...) {
   as <- match.arg(as, "text")
   callNextMethod(x=x, as=as)
 })
-
 
 #' \code{ecitmatch} serves as an API to the PubMed
 #' \href{http://www.ncbi.nlm.nih.gov/pubmed/batchcitmatch}{batch citation matcher}.

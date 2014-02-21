@@ -2,7 +2,6 @@
 #' @include parse-params.R
 NULL
 
-
 #' @export
 .efetch <- setRefClass(
   Class="efetch",
@@ -44,7 +43,7 @@ NULL
   )
 )
 
-#' @rdname content-methods
+#' @rdname content
 #' @export
 setMethod("content", "efetch", function(x, as=NULL, ...) {
   as <- as %||% retmode(x)
@@ -60,7 +59,6 @@ setMethod("content", "efetch", function(x, as=NULL, ...) {
   as <- match.arg(as, c("text", "textConnection", "xml"))
   callNextMethod(x=x, as=as)
 })
-
 
 #' \code{efetch} performs calls to the NCBI EFetch utility to retrieve data records
 #' in the requested format for an NCBI Accession Number, one or more primary UIDs,
@@ -117,23 +115,23 @@ setMethod("content", "efetch", function(x, as=NULL, ...) {
 #' \code{\link{content}}, \code{\link{getUrl}}, \code{\link{getError}},
 #' \code{\link{database}}, \code{\link{retmode}}, \code{\link{rettype}}.
 #' @examples
+#' \dontrun{
 #' ## From Protein, retrieve a raw GenPept record and write it to a file.
 #' p <- efetch("195055", "protein", "gp")
+#' p
 #' 
-#' \dontrun{
-#' write(content(p, "text"), file="~/AAD15290.gp")
-#' }
+#' write(content(p, "text"), file = "~/AAD15290.gp")
 #' 
 #' ## Get accessions for a list of GenBank IDs (GIs)
-#' acc <- efetch(c("1621261", "89318838", "68536103", "20807972", "730439"), "protein",
-#'               rettype="acc")
+#' acc <- efetch(c("1621261", "89318838", "68536103", "20807972", "730439"),
+#'               "protein", rettype = "acc")
 #' acc
 #' acc <- strsplit(content(acc), "\n")[[1]]
 #' acc
 #' 
 #' ## Get GIs from a list of accession numbers
 #' gi <- efetch(c("CAB02640.1", "EAS10332.1", "YP_250808.1", "NP_623143.1", "P41007.1"),
-#'               "protein", "uilist")
+#'              "protein", "uilist")
 #' gi
 #' 
 #' ## we can conveniently extract the UIDs using the eutil method #xmlValue(xpath)
@@ -154,6 +152,7 @@ setMethod("content", "efetch", function(x, as=NULL, ...) {
 #' 
 #' ## Use an XPath expession to extract the scientific name.
 #' tx$xmlValue("/TaxaSet/Taxon/ScientificName")
+#' }
 efetch <- function(uid, db=NULL, rettype=NULL, retmode=NULL,
                    retstart=NULL, retmax=NULL, querykey=NULL,
                    webenv=NULL, strand=NULL, seqstart=NULL,
@@ -188,7 +187,6 @@ efetch <- function(uid, db=NULL, rettype=NULL, retmode=NULL,
          seq_stop=seqstop, complexity=complexity)
 }
 
-
 #' EFetch accessors
 #' 
 #' Extract XML nodes from an \code{\linkS4class{efetch}} object.
@@ -199,15 +197,16 @@ efetch <- function(uid, db=NULL, rettype=NULL, retmode=NULL,
 #' @rdname efetch-methods
 #' @export
 #' @examples
+#' \dontrun{
 #' p <- efetch("195055", "protein", "gp", "xml")
 #' p['//GBFeature[GBFeature_key="mat_peptide"]//GBQualifier_value']
+#' }
 setMethod("[", c("efetch", "character"), function(x, i) {
   if (retmode(x) != "xml") {
     stop("This document does not contain XML data", call.=FALSE)
   }
   x$xmlSet(i)  
 })
-
 
 #' @rdname efetch-methods
 #' @export

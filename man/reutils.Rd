@@ -98,9 +98,8 @@ when calling a EUtil.
   \itemize{ \item \code{reutils.email}: NCBI requires that
   a user of their API provides an email address with a call
   to Entrez. If you are going to perform a lot of queries
-  you should set \code{reutils.email} to your email address
-  in your .Rprofile file. \emph{reutils} will annoy you
-  with warnings until you comply.
+  consider setting \code{reutils.email} to your email
+  address in your .Rprofile file.
 
   \item \code{reutils.show.headlines}: By default
   \code{\linkS4class{efetch}} objects containing text data
@@ -112,24 +111,29 @@ when calling a EUtil.
 
   \item \code{reutils.verbose.queries}: If you perform many
   queries interactively you might want to get messages
-  announcing the queris you run. You can do so by setting
+  announcing the queries you run. You can do so by setting
   the option \code{reutils.verbose.queries} to \code{TRUE}.
 
-  }
+  \item \code{reutils.test.remote}: Unit tests that require
+  online access to NCBI services are disabled by default,
+  as they cannot be garanteed to be available/working under
+  all circumstances. Set the option
+  code{reutils.test.remote} to \code{TRUE} to run the full
+  suite of tests. }
 }
 \examples{
-############################################################################
 #
 # combine esearch and efetch
 #
-# Download PubMed records that are indexed in MeSH for both 'Clamydia' and 
+# Download PubMed records that are indexed in MeSH for both 'Chlamydia' and 
 # 'genome' and were published in 2013.
 query <- "Chlamydia[mesh] and genome[mesh] and 2013[pdat]"
 
 # Upload the PMIDs for this search to the History server
-pmids <- esearch(query, "pubmed", usehistory=TRUE)
+pmids <- esearch(query, "pubmed", usehistory = TRUE)
 pmids
 
+\dontrun{
 # Fetch the records
 articles <- efetch(pmids)
 
@@ -138,8 +142,6 @@ articles <- efetch(pmids)
 titles <- articles$xmlValue("//ArticleTitle")
 abstracts <- articles$xmlValue("//AbstractText")
 
-
-############################################################################
 #
 # combine epost with esummary/efetch
 #
@@ -150,15 +152,16 @@ uid <- c("194680922", "50978626", "28558982", "9507199", "6678417")
 p <- epost(uid, "protein")
 
 # retrieve docsums with esummary
-docsum <- content(esummary(p, version="1.0"), "parsed")
+docsum <- content(esummary(p, version = "1.0"), "parsed")
 docsum
 
 # download FASTAs as 'text' with efetch
-prot <- efetch(p, retmode="text", rettype="fasta")
+prot <- efetch(p, retmode = "text", rettype = "fasta")
 prot
 
 # retrieve the content from the efetch object
 fasta <- content(prot)
+}
 }
 \author{
 Gerhard Schöfl \email{gschofl@yahoo.de}

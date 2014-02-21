@@ -1,7 +1,6 @@
 #' @include eutil.R
 NULL
 
-
 #' @export
 .einfo <- setRefClass(
   Class="einfo",
@@ -70,7 +69,6 @@ extract_df <- function(x, path) {
   }
 }
 
-
 #' \code{einfo} performs calls to the NCBI EInfo utility to retrieve the names
 #' of all valid Entrez databases, or, if \code{db} is provided,
 #' to retrieve statistics for a single database, including lists of indexing
@@ -91,10 +89,13 @@ extract_df <- function(x, path) {
 #' @examples
 #' ## Return a list of all current Entrez database names
 #' einfo()
+#' 
+#' \dontrun{
 #' ## Return statistics for the Entrez Gene database and parse
 #' ## the returned data into a data.frame
 #' x <- einfo("gene")
 #' content(x, "parsed")
+#' }
 einfo <- function(db=NULL) {
   assert_that(is.null(db) || is.string(db))
   .einfo(method="GET", db=db)
@@ -112,18 +113,18 @@ einfo <- function(db=NULL) {
 #' @rdname einfo-methods
 #' @export
 #' @examples
+#' \dontrun{
 #' e <- einfo("pubmed")
 #' e[1:5]
 #' e["Description"]
+#' e[["Links"]]
+#' }
 setMethod("[", "einfo", function(x, i) {
   content(x, "parsed")[i]
 })
 
-
 #' @rdname einfo-methods
 #' @export
-#' @examples
-#' e[["Links"]]
 setMethod("[[", "einfo", function(x, i) {
   content(x, "parsed")[[i]]
 })

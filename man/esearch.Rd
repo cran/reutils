@@ -83,19 +83,22 @@ for additional information on this EUtility.
 pmid <- esearch("Chlamydia psittaci[titl] and 2013[pdat]", "pubmed")
 pmid
 
+\dontrun{
 ## Extract the query results either as an XML tree or parsed into
 ## a character vector
 xml <- content(pmid, "xml")
 uids <- uid(pmid)
 
 ## Alternatively post the UIDs to the History Server.
-pmid <- esearch("Chlamydia psittaci[titl] and 2013[pdat]", "pubmed", usehistory=TRUE)
+pmid <- esearch("Chlamydia psittaci[titl] and 2013[pdat]", "pubmed",
+                usehistory = TRUE)
 pmid
 
 ## Associate new search results with the existing search results.
 pmid2 <- esearch("Chlamydia psittaci[titl] and 2012[pdat]", "pubmed",
-                 usehistory=TRUE, webenv=webenv(pmid))
+                 usehistory = TRUE, webenv = webenv(pmid))
 pmid2
+}
 }
 \seealso{
 Combine calls to ESearch with other EUtils:

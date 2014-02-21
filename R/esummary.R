@@ -2,7 +2,6 @@
 #' @include parse-params.R
 NULL
 
-
 #' @export
 .esummary <- setRefClass(
   Class="esummary",
@@ -27,7 +26,6 @@ NULL
     } 
   )
 )
-
 
 #' \code{esummary} performs calls to the NCBI ESummary utility to retrieve document
 #' summaries (DocSums) for a list of primary UIDs or for a set of UIDs stored in the
@@ -73,13 +71,16 @@ NULL
 #' ## Retrieve the Document Summary information for a set of
 #' ## UIDs frome the Gene datanase.
 #' ds <- esummary(c("828392", "790", "470338"), "gene")
+#' ds
 #' 
+#' \dontrun{
 #' ## parse the XML into a data frame
 #' df <- content(ds, "parsed")
 #' df
 #' 
 #' ## use XPath expressions to extract nodes of interest
 #' ds['//TaxID']
+#' }
 esummary <- function(uid, db=NULL, retstart=1, retmax=10000,
                       querykey=NULL, webenv=NULL, version="2.0") {
   ## extract query parameters
@@ -104,15 +105,16 @@ esummary <- function(uid, db=NULL, retstart=1, retmax=10000,
 #' @rdname esummary-methods
 #' @export
 #' @examples
+#' \dontrun{
 #' ds <- esummary("470338", "protein")
 #' ds["//Slen/node()"]
 #' 
 #' require("XML")
 #' as.numeric(xmlValue(ds[["//Slen"]]))
+#' }
 setMethod("[", c("esummary", "character"), function(x, i) {
   x$xmlSet(i)  
 })
-
 
 #' @rdname esummary-methods
 #' @export

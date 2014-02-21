@@ -1,7 +1,6 @@
 #' @include eutil.R
 NULL
 
-
 #' @export
 .egquery <- setRefClass(
   Class="egquery",
@@ -27,8 +26,6 @@ NULL
     }
   )
 )
-
-
 
 #' \code{egquery} retrieves the number of records in all Entrez databases for
 #' a single text query.

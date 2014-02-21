@@ -1,15 +1,15 @@
-############################################################################
 #
 # combine esearch and efetch
 #
-# Download PubMed records that are indexed in MeSH for both 'Clamydia' and 
+# Download PubMed records that are indexed in MeSH for both 'Chlamydia' and 
 # 'genome' and were published in 2013.
 query <- "Chlamydia[mesh] and genome[mesh] and 2013[pdat]"
 
 # Upload the PMIDs for this search to the History server
-pmids <- esearch(query, "pubmed", usehistory=TRUE)
+pmids <- esearch(query, "pubmed", usehistory = TRUE)
 pmids
 
+\dontrun{
 # Fetch the records
 articles <- efetch(pmids)
 
@@ -18,8 +18,6 @@ articles <- efetch(pmids)
 titles <- articles$xmlValue("//ArticleTitle")
 abstracts <- articles$xmlValue("//AbstractText")
 
-
-############################################################################
 #
 # combine epost with esummary/efetch
 #
@@ -30,12 +28,13 @@ uid <- c("194680922", "50978626", "28558982", "9507199", "6678417")
 p <- epost(uid, "protein")
 
 # retrieve docsums with esummary
-docsum <- content(esummary(p, version="1.0"), "parsed")
+docsum <- content(esummary(p, version = "1.0"), "parsed")
 docsum
 
 # download FASTAs as 'text' with efetch
-prot <- efetch(p, retmode="text", rettype="fasta")
+prot <- efetch(p, retmode = "text", rettype = "fasta")
 prot
 
 # retrieve the content from the efetch object
 fasta <- content(prot)
+}

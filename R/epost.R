@@ -2,7 +2,6 @@
 #' @include parse-params.R
 NULL
 
-
 #' @export
 .epost <- setRefClass(
   Class="epost",
@@ -46,7 +45,6 @@ parse_epost <- function(.obj) {
   }
 }
 
-
 #' \code{epost} uses the Entrez EPost utility to upload primary UIDs to the Entrez History server
 #' or append a list of UIDs to an existing set of UIDs attached to a Web Environment.
 #'
@@ -85,11 +83,10 @@ epost <- function(uid, db=NULL, webenv=NULL) {
         id=.collapse(params$uid), db=params$db, WebEnv=webenv)
 }
 
-#' @rdname webenv-methods
+#' @rdname webenv
 #' @export
 setMethod("webenv", "epost", function(x, ...) webenv(x$get_content("parsed")))
 
-#' @rdname querykey-methods
+#' @rdname querykey
 #' @export
 setMethod("querykey", "epost", function(x, ...) querykey(x$get_content("parsed")))
-
