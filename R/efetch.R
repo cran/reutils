@@ -17,17 +17,27 @@ NULL
     },
     show=function() {
       cat("Object of class", sQuote(eutil()), "\n")
+      nhead <- getOption("reutils.show.headlines")
       if (no_errors()) {
         if (retmode() == "xml") {
           methods::show(get_content("xml"))
-        } else{
-          cat(get_content("text"))
+## This does not work well with huge XML objects          
+#           out <- capture.output(get_content("xml"))
+#           if (!is.null(nhead)) {
+#             out <- out[1:nhead]
+#           }
+#           cat(substring(out, first=1, last=getOption("width") - 2), "...", sep="\n")
+        } else {
+          con <- get_content("textConnection")
+          on.exit(close(con))
+          headlines <- readLines(con, n=nhead %||% -1L)
+          cat(headlines, "...", sep="\n")
         }
       } else {
         methods::show(get_error())
       }
       tail <- sprintf("EFetch query using the %s database.\nQuery url: %s\nRetrieval type: %s, retrieval mode: %s\n",
-                      sQuote(database()), sQuote(ellipsize(get_url(), offset=12)),
+                      sQuote(database()), sQuote(ellipsize(get_url(), offset=15)),
                       sQuote(rettype()), sQuote(retmode()))
       cat(tail, sep="\n")
     } 
@@ -35,7 +45,7 @@ NULL
 )
 
 #' @rdname content-methods
-#' @aliases content,efetch-method
+#' @export
 setMethod("content", "efetch", function(x, as=NULL, ...) {
   as <- as %||% retmode(x)
   if (as == "asn.1") {
@@ -47,7 +57,7 @@ setMethod("content", "efetch", function(x, as=NULL, ...) {
   if (as == "xml" && retmode(x) != "xml") {
     stop("This document does not contain XML data", call.=FALSE)
   }
-  as <- match.arg(as, c("text", "xml"))
+  as <- match.arg(as, c("text", "textConnection", "xml"))
   callNextMethod(x=x, as=as)
 })
 
@@ -183,19 +193,14 @@ efetch <- function(uid, db=NULL, rettype=NULL, retmode=NULL,
 #' 
 #' Extract XML nodes from an \code{\linkS4class{efetch}} object.
 #' 
-#' @usage x[...]
 #' @param x An \code{\linkS4class{efetch}} object containing XML data.
-#' @param ... An XPath expression
+#' @param i An XPath expression specifying the XML nodes to extract.
 #' @return An XML node set.
-#' 
-#' @export
-#' @docType methods
-#' @name [.efetch
 #' @rdname efetch-methods
+#' @export
 #' @examples
 #' p <- efetch("195055", "protein", "gp", "xml")
 #' p['//GBFeature[GBFeature_key="mat_peptide"]//GBQualifier_value']
-#' @aliases [,efetch,character-method
 setMethod("[", c("efetch", "character"), function(x, i) {
   if (retmode(x) != "xml") {
     stop("This document does not contain XML data", call.=FALSE)
@@ -204,12 +209,8 @@ setMethod("[", c("efetch", "character"), function(x, i) {
 })
 
 
-#' @usage x[[...]]
-#' @export
-#' @docType methods
-#' @name [[.efetch
 #' @rdname efetch-methods
-#' @aliases [[,efetch,character-method
+#' @export
 setMethod("[[", c("efetch", "character"), function(x, i) {
   ans <- x[i]
   if (length(ans) > 1) {

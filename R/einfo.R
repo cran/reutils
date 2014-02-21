@@ -96,9 +96,7 @@ extract_df <- function(x, path) {
 #' x <- einfo("gene")
 #' content(x, "parsed")
 einfo <- function(db=NULL) {
-  if (!is.null(db)) {
-    stopifnot(is.string(db))
-  }
+  assert_that(is.null(db) || is.string(db))
   .einfo(method="GET", db=db)
 }
 
@@ -106,34 +104,26 @@ einfo <- function(db=NULL) {
 #' 
 #' Extract parts of a parsed \code{\linkS4class{einfo}} object.
 #' 
-#' @usage x[i]
 #' @param x An \code{\linkS4class{einfo}} object.
-#' @param i Indices specifying elements to extract.
+#' @param i Numeric or character indices specifying the elements to extract.
 #' @return A list.
 #' @seealso 
 #'    \code{\link[base]{Extract}}
-#' @export
-#' @docType methods
-#' @name [.einfo
 #' @rdname einfo-methods
+#' @export
 #' @examples
 #' e <- einfo("pubmed")
 #' e[1:5]
 #' e["Description"]
-#' @aliases [,einfo,ANY-method
 setMethod("[", "einfo", function(x, i) {
   content(x, "parsed")[i]
 })
 
 
-#' @usage x[[i]]
-#' @export
-#' @docType methods
-#' @name [[.einfo
 #' @rdname einfo-methods
+#' @export
 #' @examples
 #' e[["Links"]]
-#' @aliases [[,einfo,ANY-method
 setMethod("[[", "einfo", function(x, i) {
   content(x, "parsed")[[i]]
 })
