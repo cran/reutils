@@ -1,33 +1,35 @@
-#' @importFrom XML xpathApply xmlValue xmlName xmlGetAttr
-#' @importFrom assertthat assert_that is.string is.scalar
-NULL
-
-"%&&%" <- function (a, b) {
+"%&&%" <- function(a, b) {
   if (is.null(a)) a else force(b)
 }
 
-"%||%" <- function (a, b) {
+"%||%" <- function(a, b) {
   if (is.null(a)) force(b) else a
 }
 
-"%|na|%" <- function (a, b) {
+"%|na|%" <- function(a, b) {
   if (is.null(a) || all(is.na(a))) force(b) else a
 }
 
-"%|char|%" <- function (a, b) {
+"%|char|%" <- function(a, b) {
   if (all(!nzchar(a))) force(b) else a
 }
 
-.escape <- function (x) {
+"%|empty|%" <- function(a, b) {
+  if (length(a) == 0L) force(b) else a
+}
+
+"%ni%" <- Negate("%in%")
+
+.escape <- function(x) {
   x <- gsub("\\s+", " ", x)
-  gsub(" (and) | (or) | (not) "," \\U\\1\\U\\2\\U\\3 ", x, perl=TRUE)
+  gsub(" (and) | (or) | (not) "," \\U\\1\\U\\2\\U\\3 ", x, perl = TRUE)
 }
 
-.collapse <- function (id) {
-  if (is.null(id)) NULL else paste0(id, collapse=",")
+.collapse <- function(id) {
+  if (is.null(id)) NULL else paste0(id, collapse = ",")
 }
 
-merge_list <- function (x, y) {
+merge_list <- function(x, y) {
   if (length(x) == 0) return(y)
   if (length(y) == 0) return(x) 
   i <- is.na(match(names(y), names(x)))
@@ -38,24 +40,24 @@ merge_list <- function (x, y) {
 }
 
 merge_linkset <- function(x) {
-  uid <- unique(unlist(x, use.names=FALSE))
-  db <- unique(vapply(x, attr, "database", FUN.VALUE="", USE.NAMES=FALSE))
-  assert_that(is.scalar(db))
+  uid <- unique(unlist(x, use.names = FALSE))
+  db <- unique(vapply(x, attr, "database", FUN.VALUE = "", USE.NAMES = FALSE))
+  assertthat::assert_that(assertthat::is.scalar(db))
   attr(uid, "database") <- db
   uid
 }
 
-compact <- function (x) {
-  x[!vapply(x, is.null, FALSE, USE.NAMES=FALSE)]
+compact <- function(x) {
+  x[!vapply(x, is.null, FALSE, USE.NAMES = FALSE)]
 }
 
-compactNA <- function (x) {
-  x[!vapply(x, function(x) all(is.na(x)), FALSE, USE.NAMES=FALSE)]
+compactNA <- function(x) {
+  x[!vapply(x, function(x) all(is.na(x)), FALSE, USE.NAMES = FALSE)]
 }
 
-trim <- function (x, trim = '\\s+') {
-  assert_that(is.vector(x))
-  gsub(paste0("^", trim, "|", trim, "$"), '', x)
+count_char <- function(char, s) {
+  s2 <- gsub(char, "", s)
+  nchar(s) - nchar(s2)
 }
 
 #' Extract the content of XML leaf nodes
@@ -67,9 +69,9 @@ trim <- function (x, trim = '\\s+') {
 #' @param ... Arguments passed to \code{\link[XML]{xpathApply}}.
 #' @keywords internal
 #' @export
-xvalue <- function(doc, path, as = 'character', default = NA_character_, ...) {
+xvalue <- function(doc, path, as = "character", default = NA_character_, ...) {
   AS <- match.fun(paste0('as.', as))
-  res <- unlist(xpathApply(doc, path, "xmlValue", ...)) %||% default
+  res <- unlist(XML::xpathApply(doc, path, XML::xmlValue, ...)) %||% default
   res %&&% AS(res)
 }
 
@@ -80,7 +82,7 @@ xvalue <- function(doc, path, as = 'character', default = NA_character_, ...) {
 #' @export
 xname <- function(doc, path, as = 'character', default = NA_character_, ...) {
   AS <- match.fun(paste0('as.', as))
-  res <- unlist(xpathApply(doc, path, "xmlName", ...)) %||% default
+  res <- unlist(XML::xpathApply(doc, path, XML::xmlName, ...)) %||% default
   res %&&% AS(res)
 }
 
@@ -92,7 +94,7 @@ xname <- function(doc, path, as = 'character', default = NA_character_, ...) {
 #' @export
 xattr <- function(doc, path, name, as = 'character', default = NA_character_, ...) {
   AS <- match.fun(paste0('as.', as))
-  res <- unlist(xpathApply(doc, path, "xmlGetAttr", name = name, ...)) %||% default
+  res <- unlist(XML::xpathApply(doc, path, XML::xmlGetAttr, name = name, ...)) %||% default
   res %&&% AS(res)
 }
 
@@ -105,7 +107,7 @@ xattr <- function(doc, path, name, as = 'character', default = NA_character_, ..
 #' @keywords internal
 #' @export
 xset <- function(doc, path, ...) {
-  xpathApply(doc, path, fun = NULL, ...)
+  XML::xpathApply(doc, path, fun = NULL, ...)
 }
 
 has_attr <- function(x, which) {
@@ -175,7 +177,7 @@ make_flattener <- function(flatten.at = 1) {
   }
 }
 
-flatten2 <- make_flattener(flatten.at=2)
+flatten2 <- make_flattener(flatten.at = 2)
 
 #' Set the NCBI rettype
 #' 
@@ -184,9 +186,9 @@ flatten2 <- make_flattener(flatten.at=2)
 #' @param retmode Optional.
 #' @keywords internal
 #' @export
-ncbi_retrieval_type <- function(db, rettype=NULL, retmode=NULL) {
+ncbi_retrieval_type <- function(db, rettype = NULL, retmode = NULL) {
   if (is.null(rettype) && !is.null(retmode)) {
-    stop("No retrieval type specified.", call.=FALSE)
+    stop("No retrieval type specified", call. = FALSE)
   }
   rt <- set_rettype(db, rettype)
   rm <- set_retmode(db, rt, retmode)
@@ -197,36 +199,36 @@ set_rettype <- function(db, rt = NULL) {
   db <- switch(db, nucleotide = 'nuccore', db)
   rt  <- rt %|char|% NULL
   switch(db,
-         bioproject=match.arg(rt, c("xml", "docsum", "uilist")),
-         biosample = match.arg(rt, c("full", "docsum", "uilist")),
+         bioproject = match.arg(rt, c("xml", "docsum", "uilist")),
+         biosample  = match.arg(rt, c("full", "docsum", "uilist")),
          biosystems = match.arg(rt, c("xml", "docsum", "uilist")),
-         gds = match.arg(rt, c("summary", "docsum", "uilist")),
-         gene = rt %&&% match.arg(rt, c("gene_table", "docsum", "uilist")),
+         gds        = match.arg(rt, c("summary", "docsum", "uilist")),
+         gene       = rt %&&% match.arg(rt, c("gene_table", "docsum", "uilist")),
          homologene = rt %&&% match.arg(rt, c("alignmentscores", "fasta", "homologene", "docsum", "uilist")),
-         mesh = match.arg(rt, c("full", "docsum", "uilist")),
+         mesh       = match.arg(rt, c("full", "docsum", "uilist")),
          nlmcatalog = rt %&&% match.arg(rt, c("docsum", "uilist")),
-         nuccore = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
-                                           "gbwithparts", "fasta_cds_na", "fasta_cds_aa",
-                                           "ft", "docsum", "uilist")),
-         nucest = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
-                                          "est", "docsum", "uilist")),
-         nucgss = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
-                                          "gss", "docsum", "uilist")),
-         popset = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
-                                          "docsum", "uilist")),
-         protein = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gp", "gpc",
-                                           "ft", "docsum", "uilist")),
-         pmc = rt %&&% match.arg(rt, c("medline", "docsum", "uilist")),
-         pubmed = rt %&&% match.arg(rt, c("medline", "uilist", "abstract", "docsum")),
-         sequences = rt  %&&% match.arg(rt, c("acc", "fasta", "seqid", "uilist", "docsum")),
-         snp = rt %&&% match.arg(rt, c("flt", "fasta", "rsr", "ssexemplar", "chr", "genxml",
-                                       "docset", "uilist", "docsum")),
-         sra = match.arg(rt, c("full", "uilist", "docsum")),
-         taxonomy = rt %&&% match.arg(rt, c("uilist", "docsum")),
+         nuccore    = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
+                                              "gbwithparts", "fasta_cds_na", "fasta_cds_aa",
+                                              "ft", "docsum", "uilist")),
+         nucest     = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
+                                              "est", "docsum", "uilist")),
+         nucgss     = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
+                                              "gss", "docsum", "uilist")),
+         popset     = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gb", "gbc",
+                                              "docsum", "uilist")),
+         protein    = rt %&&% match.arg(rt, c("fasta", "acc", "seqid", "native", "gp", "gpc",
+                                              "ipg", "ft", "docsum", "uilist")),
+         pmc        = rt %&&% match.arg(rt, c("medline", "docsum", "uilist")),
+         pubmed     = rt %&&% match.arg(rt, c("medline", "uilist", "abstract", "docsum")),
+         sequences  = rt  %&&% match.arg(rt, c("acc", "fasta", "seqid", "uilist", "docsum")),
+         snp        = rt %&&% match.arg(rt, c("flt", "fasta", "rsr", "ssexemplar", "chr",
+                                              "docset", "uilist", "docsum")),
+         sra        = match.arg(rt, c("full", "uilist", "docsum")),
+         taxonomy   = rt %&&% match.arg(rt, c("uilist", "docsum")),
          stop('Database ', sQuote(db), ' not supported', call.=FALSE))
 }
 
-set_retmode <- function (db, rt, rm = NULL) {
+set_retmode <- function(db, rt, rm = NULL) {
   if (!is.null(rt) && rt == "docsum") {
     return("xml")
   }
@@ -307,6 +309,7 @@ set_retmode <- function (db, rt, rm = NULL) {
                           seqid = match.arg(rm, c("text")),
                           gp = match.arg(rm, c("text", "xml")),
                           gpc = match.arg(rm, c("xml")),
+                          ipg = match.arg(rm, c("xml")),
                           ft = match.arg(rm, c("text"))
                           
          ),
@@ -343,7 +346,6 @@ set_retmode <- function (db, rt, rm = NULL) {
                       rsr = match.arg(rm, c("text")),
                       ssexemplar = match.arg(rm, c("text")),
                       chr = match.arg(rm, c("text")),
-                      genxml = match.arg(rm, c("xml")),
                       docset = match.arg(rm, c("text")),
                       uilist = match.arg(rm, c("xml", "text"))  
          ),

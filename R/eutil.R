@@ -1,5 +1,6 @@
 #' @include eutil-error.R
-#' @importFrom RCurl basicHeaderGatherer basicTextGatherer postForm getURLContent curlEscape
+#' @importFrom RCurl basicHeaderGatherer basicTextGatherer curlEscape postForm
+#'   getURLContent
 NULL
 
 #' Class \code{"eutil"}: Reference classes that hold the response from EUtils
@@ -40,8 +41,8 @@ NULL
 #' @examples
 #' showClass("eutil")
 eutil <- setRefClass(
-    Class = "eutil",
-    fields = list(params = "list", errors = "eutil_error", content = "character"),
+    Class   = "eutil",
+    fields  = list(params = "list", errors = "eutil_error", content = "character"),
     methods = list(
       initialize = function() {
         .self$params  <- list()
@@ -82,14 +83,16 @@ eutil <- setRefClass(
         return(.self$errors)
       },
       get_content = function(as = "text", ...) {
-        "Return the results of an Entrez query as text, xml, a parsed R object,
-         or a \\code{\\link{textConnection}}; should not be used directly, use
+        "Return the results of an Entrez query as text, xml, json, a textConnection,
+        or parsed to a list or data.frame; should not be used directly, use
         \\code{\\link{content}} instead."
-        as <- match.arg(as, c("text", "xml", "parsed", "textConnection"))
+        as <- match.arg(as, c("text", "xml", "json", "textConnection", "parsed"))
+        check_retmode(as)
         switch(as,
-          text = .self$content,
-          xml = savely_parse_xml(.self$content),
-          parsed = parse_content(.self),
+          text   = .self$content,
+          xml    = savely_parse_xml(.self$content, ...),
+          json   = savely_parse_json(.self$content, ...),
+          parsed = parse_content(.self, ...),
           textConnection = textConnection(.self$content, ...)
         )
       },
@@ -109,24 +112,27 @@ eutil <- setRefClass(
                   " this message go away.", call. = FALSE, immediate. = FALSE)
         }
         .params <- list(...)
-        .params <- compact(Reduce(merge_list, list(.params, params,  list(email = .email, tool = "reutils"))))
+        .params <- compact(Reduce(merge_list, list(.params, params, list(email = .email, tool = "reutils"))))
         .self$params <- .params
         
-        opts <- list()
-        hg <- basicHeaderGatherer()
+        opts <- list(connecttimeout = 10)
+        hg <- RCurl::basicHeaderGatherer()
         opts$headerfunction <- hg$update
-        tg <- basicTextGatherer()
+        tg <- RCurl::basicTextGatherer()
         opts$writefunction <- tg$update
         
         if (method == "POST") {
-          e <- tryCatch(postForm(query_url("POST"), .params = .self$params, .opts = opts),
-                        error = function(e) e$message)
+          e <- tryCatch({
+            RCurl::postForm(query_url("POST"), .params = .self$params,
+                            .opts = opts, style = "POST")
+          }, error = function(e) e$message)
         } else if (method == "GET") {
           if (verbose) {
             cat(ellipsize(query_url("GET")), "\n")
           }
-          e <- tryCatch(getURLContent(query_url("GET"), .opts = opts),
-                        error = function(e) e$message)
+          e <- tryCatch({
+            RCurl::getURLContent(query_url("GET"), .opts = opts)
+          }, error = function(e) e$message)
         }
         .self$content <- as.character(tg$value())
         if (is.null(e) || !nzchar(e)) {
@@ -154,7 +160,7 @@ eutil <- setRefClass(
                        paste0('http://eutils.ncbi.nlm.nih.gov/entrez/eutils/', eutil(),'.fcgi')
         )
         if (method == "GET") {
-          fields <- paste(curlEscape(names(.self$params)), curlEscape(.self$params),
+          fields <- paste(RCurl::curlEscape(names(.self$params)), RCurl::curlEscape(.self$params),
                           sep = "=", collapse = "&")
           paste0(host, "?", fields)
         } else {
@@ -175,45 +181,66 @@ eutil <- setRefClass(
       },
       no_errors = function() {
         .self$errors$all_empty()
+      },
+      check_retmode = function(as) {
+        if (!is.null(retmode())) {
+          if (retmode() == 'xml' && as %ni% c("text", "xml", "parsed"))
+            stop("Cannot return data of retmode ", dQuote(retmode()), " as ", dQuote(as), ".", call. = FALSE)
+          if (retmode() == 'json' && as %ni% c("text", "json", "parsed"))
+            stop("Cannot return data of retmode ", dQuote(retmode()), " as ", dQuote(as), ".", call. = FALSE)
+          if (retmode() == 'text' && as %ni% c("text", "textConnection"))
+            stop("Cannot return data of retmode ", dQuote(retmode()), " as ", dQuote(as), ".", call. = FALSE)
+          if (retmode() == 'asn.1' && as %ni% c("text", "textConnection"))
+            stop("Cannot return data of retmode ", dQuote(retmode()), " as ", dQuote(as), ".", call. = FALSE)
+        }
       }
     )
   )
 
-#' @importFrom XML xmlParse xmlParseString
 savely_parse_xml <- function(x, ...) {
-  tryCatch(xmlParse(x, asText = TRUE, error = NULL, ...),
+  tryCatch(XML::xmlParse(x, asText = TRUE, error = NULL, ...),
            "XMLError" = function(e) {
              errmsg <- paste("XML parse error:", e$message)
-             xmlParseString(paste0("<ERROR>", errmsg, "</ERROR>"))
+             XML::xmlParseString(paste0("<ERROR>", errmsg, "</ERROR>"))
            },
            "error" = function(e) {
              errmsg <- paste("Simple error:", e$message)
-             xmlParseString(paste0("<ERROR>", errmsg, "</ERROR>"))
+             XML::xmlParseString(paste0("<ERROR>", errmsg, "</ERROR>"))
            })
 }
 
-parse_content <- function(.object) {
-  switch(.object$eutil(),
-    einfo    = parse_einfo(.object),
-    esearch  = parse_esearch(.object),
-    epost    = parse_epost(.object),
-    esummary = parse_esummary(.object),
-    elink    = parse_linkset(.object),
+savely_parse_json <- function(x, ...) {
+  intent <- list(...)$intent %||% 2
+  jsonlite::prettify(x, indent = intent)
+}
+
+parse_content <- function(object, ...) {
+  switch(object$eutil(),
+    einfo     = parse_einfo(object, ...),
+    esearch   = parse_esearch(object, ...),
+    epost     = parse_epost(object, ...),
+    esummary  = parse_esummary(object, ...),
+    elink     = parse_linkset(object, ...),
+    ecitmatch = parse_ecitmatch(object, ...),
     "Not yet implemented"
   )
 }
 
 #' Extract the data content from an Entrez request
 #' 
-#' There are four ways to access data returned by an Entrez request: as a character
+#' There are five ways to access data returned by an Entrez request: as a character
 #' string \code{(as = "text")}, as a \code{\link{textConnection}}
-#' \code{(as = "textConnection")}, as a parsed XML tree \code{(as = "xml")}, or,
-#' if supported, parsed into a native R object, e.g. a \code{list} or a
-#' \code{data.frame} \code{(as = "parsed")}.
+#' \code{(as = "textConnection")}, as an \code{\linkS4class{XMLInternalDocument}}
+#' \code{(as = "xml")} or \code{json} object \code{(as = "json")}
+#' (depending on the \code{retmode} with which the request was performed),
+#' or parsed into a native R object, e.g. a \code{list} or a \code{data.frame}
+#' \code{(as = "parsed")}.
 #' 
 #' @param x An \code{\linkS4class{eutil}} object.
-#' @param as Type of output: \code{"xml"}, \code{"text"}, \code{"textConnection"}, 
-#' or \code{"parsed"}.
+#' @param as Type of output: \code{"text"}, \code{"xml"}, \code{"json"},
+#' \code{"textConnection"}, or \code{"parsed"}. \code{content} attempts to
+#' figure out the most appropriate output type, based on the \code{retmode} of
+#' the object.
 #' @param ... Further arguments passed on to methods.
 #' @seealso
 #'    \code{\link{einfo}}, \code{\link{esearch}}, \code{\link{esummary}},
@@ -222,26 +249,36 @@ parse_content <- function(.object) {
 #' @export
 #' @examples
 #' \dontrun{
+#' ## einfo() defaults to retmode 'xml'
 #' e <- einfo()
 #' 
-#' ## return XML as an 'XMLInternalDocument'.
-#' content(e, "xml")
+#' ## automatically return data as an 'XMLInternalDocument'.
+#' if (e$no_errors()) {
+#'   content(e)
 #' 
-#' ## return XML as character string.
-#' cat(content(e, "text"))
+#'   ## return the XML data as character string.
+#'   cat(content(e, "text"))
 #' 
-#' ## return DbNames parsed into a character vector.
-#' content(e, "parsed")
+#'   ## return DbNames parsed into a character vector.
+#'   content(e, "parsed")
+#' }
 #' 
-#' ## return a textConnection to allow linewise read of the data.
+#' ## return data as a JSON object
+#' e2 <- einfo(db = "gene", retmode = "json")
+#' if (e2$no_errors()) {
+#'   content(e2)
+#' }
+#' 
+#' ## return a textConnection to allow linewise reading of the data.
 #' x <- efetch("CP000828", "nuccore", rettype = "gbwithparts", retmode = "text")
-#' con <- content(x, "textConnection")
+#' con <- content(x, as = "textConnection")
 #' readLines(con, 2)
 #' close(con)
 #' }
-setGeneric("content", function(x, as = "xml", ...) standardGeneric("content"))
-#' @rdname content
-setMethod("content", "eutil", function(x, as = "xml", ...) {
+setGeneric("content", function(x, ...) standardGeneric("content"))
+#' @describeIn content
+setMethod("content", "eutil", function(x, ...) {
+  as <- list(...)$as %||% match.arg(x$retmode(), c("text", "xml", "json"))
   x$get_content(as)
 })
 
@@ -263,8 +300,7 @@ setMethod("content", "eutil", function(x, as = "xml", ...) {
 #' getError(e)
 #' }
 setGeneric("getError", function(x, ...) standardGeneric("getError"))
-#' @rdname getError
-#' @export
+#' @describeIn getError
 setMethod("getError", "eutil", function(x, ...) {
   x$get_error()
 })
@@ -287,8 +323,7 @@ setMethod("getError", "eutil", function(x, ...) {
 #' getUrl(e)
 #' }
 setGeneric("getUrl", function(x, ...) standardGeneric("getUrl"))
-#' @rdname getUrl
-#' @export
+#' @describeIn getUrl
 setMethod("getUrl", "eutil", function(x, ...) {
   x$get_url()
 })
@@ -303,7 +338,6 @@ setMethod("getUrl", "eutil", function(x, ...) {
 #' @keywords internal
 setGeneric("performQuery", function(x, method = "GET", ...) standardGeneric("performQuery"))
 #' @rdname performQuery
-#' @export
 setMethod("performQuery", "eutil", function(x, method = "GET", ...) {
   method <- match.arg(method, c("GET", "POST"))
   x$perform_query(method = method, ...)
@@ -328,14 +362,13 @@ setMethod("performQuery", "eutil", function(x, method = "GET", ...) {
 #' database(e)
 #' }
 setGeneric("database", function(x, ...) standardGeneric("database"))
-#' @rdname database
-#' @export
+#' @describeIn database
 setMethod("database", "eutil", function(x, ...) x$database())
 
 #' retmode
 #' 
 #' Get the \dQuote{retrieval mode} of an \code{\linkS4class{eutil}} object
-#' It is usually one of \code{xml} \code{text}, or \code{asn.1}. 
+#' It is usually one of \code{xml}, \code{json}, \code{text}, or \code{asn.1}. 
 #' It is set to \code{NULL} if \dQuote{retrieval mode} is not supported by an
 #' E-Utility.
 #' 
@@ -353,14 +386,13 @@ setMethod("database", "eutil", function(x, ...) x$database())
 #' retmode(e)
 #' }
 setGeneric("retmode", function(x, ...) standardGeneric("retmode"))
-#' @rdname retmode
-#' @export
+#' @describeIn retmode
 setMethod("retmode", "eutil", function(x, ...) x$retmode())
 
 #' rettype
 #' 
 #' Get the \dQuote{retrieval type} of an \code{\linkS4class{eutil}} object. See 
-#' \href{http://www.ncbi.nlm.nih.gov/books/NBK25499/table/chapter4.chapter4_table1/?report = objectonly}{here}
+#' \href{http://www.ncbi.nlm.nih.gov/books/NBK25499/table/chapter4.T._valid_values_of__retmode_and/?report=objectonly}{here}
 #' for the available retrieval types for different NCBI databases.
 #' 
 #' @param x An \code{\linkS4class{eutil}} object.
@@ -377,8 +409,7 @@ setMethod("retmode", "eutil", function(x, ...) x$retmode())
 #' rettype(e)
 #' }
 setGeneric("rettype", function(x, ...) standardGeneric("rettype"))
-#' @rdname rettype
-#' @export
+#' @describeIn rettype
 setMethod("rettype", "eutil", function(x, ...) x$rettype())
 
 #' uid

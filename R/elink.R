@@ -3,17 +3,17 @@ NULL
 
 #' @export
 .elink <- setRefClass(
-  Class="elink",
-  contains="eutil",
-  methods=list(
-    initialize=function(method, ...) {
+  Class    = "elink",
+  contains = "eutil",
+  methods  = list(
+    initialize = function(method, ...) {
       callSuper()
-      perform_query(method=method, ...)
+      perform_query(method = method, ...)
       if (errors$all_empty()) {
         errors$check_errors(.self)
       }
     },
-    show=function() {
+    show = function() {
       cat("Object of class", sQuote(eutil()), "\n")
       if (no_errors()) {
         methods::show(get_content("parsed"))
@@ -24,27 +24,26 @@ NULL
   )
 )
 
-#' @importFrom XML xmlDoc free
-parse_linkset <- function(.obj) {
-  x <- .obj$get_content("xml")
+parse_linkset <- function(object) {
+  x <- object$get_content("xml")
   DbFrom <- xvalue(x, "/eLinkResult/LinkSet/DbFrom")
   IdList <- xvalue(x, "/eLinkResult/LinkSet/IdList/Id")
   LinkSetDb <- xset(x, "/eLinkResult/LinkSet/LinkSetDb")
   if (length(LinkSetDb) < 1L) {
     lset <- list(
-      structure(NA_character_, score=NA_integer_, database=NA_character_,
-                linkName=NA_character_, class=c("entrez_link", "character"))
+      structure(NA_character_, score = NA_integer_, database = NA_character_,
+                linkName = NA_character_, class = c("entrez_link", "character"))
       )
   } else {
     lset <- lapply(LinkSetDb, function(lsd) {
-      lsd <- xmlDoc(lsd)
+      lsd <- XML::xmlDoc(lsd)
       uid <- xvalue(lsd, "/LinkSetDb/Link/Id")
       score <- xvalue(lsd, "/LinkSetDb/Link/Score", as="integer")
       dbTo <- xvalue(lsd, "/LinkSetDb/DbTo") %|char|% NA_character_
       linkName <- xvalue(lsd, "/LinkSetDb/LinkName") %|char|% NA_character_
-      free(lsd)
-      structure(uid, score=score, database=dbTo, linkName=linkName,
-                class=c("entrez_link", "character"))
+      XML::free(lsd)
+      structure(uid, score = score, database = dbTo, linkName = linkName,
+                class = c("entrez_link", "character"))
     })
     lset <- compactNA(lset)
   }
@@ -52,10 +51,10 @@ parse_linkset <- function(.obj) {
   lnm <- vapply(lset, attr, "linkName", FUN.VALUE="")
   structure(
     lset,
-    names=lnm,
-    database=DbFrom,
-    uid=IdList,
-    class=c("entrez_linkset", "list")
+    names = lnm,
+    database = DbFrom,
+    uid = IdList,
+    class = c("entrez_linkset", "list")
   )
 }
 
@@ -103,12 +102,10 @@ print.entrez_link <- function(x, ...) {
   out
 }
 
-#' @rdname database
-#' @export
+#' @describeIn database
 setMethod("database", "entrez_linkset", function(x, ...) attr(x, "database"))
 
-#' @rdname uid
-#' @export
+#' @describeIn uid
 setMethod("uid", "entrez_linkset", function(x, ...) attr(x, "uid"))
 
 #' linkset
@@ -130,8 +127,7 @@ setMethod("uid", "entrez_linkset", function(x, ...) attr(x, "uid"))
 #' linkset(x, "pubmed_pubmed_reviews")
 #' }
 setGeneric("linkset", function(x, linkname = NULL, ...) standardGeneric("linkset"))
-#' @rdname linkset
-#' @export
+#' @describeIn linkset
 setMethod("linkset", "entrez_linkset", function(x, linkname = NULL, ...) {
   if (!is.null(linkname)) {
     ans <- x[linkname]
@@ -171,7 +167,7 @@ print.entrez_linkset <- function(x, ...) {
 #' @title elink - finding related data through Entrez links
 #' @details
 #' See the official online documentation for NCBI's
-#' \href{http://www.ncbi.nlm.nih.gov/books/NBK25499/\#chapter4.ELink}{EUtilities}
+#' \href{http://www.ncbi.nlm.nih.gov/books/NBK25499//#chapter4.ELink}{EUtilities}
 #' for additional information.
 #' 
 #' If \code{dbTo} and \code{dbFrom} are set to the same database, ELink will
@@ -250,16 +246,16 @@ print.entrez_linkset <- function(x, ...) {
 #' ## retrive the abstracts for the first five linked reviews
 #' abstracts <- efetch(p["pubmed_pubmed_reviews"][1:5], rettype = "abstract")
 #' }
-elink <- function(uid, dbFrom=NULL, dbTo=NULL, linkname=NULL,
-                  usehistory=FALSE, cmd="neighbor",
-                  correspondence=FALSE, querykey=NULL, webenv=NULL,
-                  term=NULL, holding=NULL, datetype=NULL,
-                  reldate=NULL, mindate=NULL, maxdate=NULL) {
+elink <- function(uid, dbFrom = NULL, dbTo = NULL, linkname = NULL,
+                  usehistory = FALSE, cmd = "neighbor",
+                  correspondence = FALSE, querykey = NULL, webenv = NULL,
+                  term = NULL, holding = NULL, datetype = NULL,
+                  reldate = NULL, mindate = NULL, maxdate = NULL) {
   ## extract query parameters
   params <- parse_params(uid, dbFrom, querykey, webenv)
   
   ## set dbTo=dbFrom if no dbTo is provided
-  if (is.null(dbTo) && !grepl(pattern="check$|links", cmd)) {
+  if (is.null(dbTo) && !grepl(pattern = "check$|links", cmd)) {
     dbTo <- params$db
   }
   if (usehistory) {
@@ -270,11 +266,17 @@ elink <- function(uid, dbFrom=NULL, dbTo=NULL, linkname=NULL,
   } else {
     uid <- .collapse(params$uid)
   }
-  .elink(method=if (length(params$uid) < 100) "GET" else "POST",
-         id=uid, db=dbTo, dbFrom=params$db, cmd=cmd, query_key=params$querykey,
-         WebEnv=params$webenv, linkname=linkname, term=term, holding=holding,
-         datetype=datetype, reldate=reldate, mindate=mindate, maxdate=maxdate)
+  .elink(method = if (length(params$uid) < 100) "GET" else "POST",
+         id = uid, db = dbTo, dbFrom = params$db, cmd = cmd, query_key = params$querykey,
+         WebEnv = params$webenv, linkname = linkname, term = term, holding = holding,
+         datetype = datetype, reldate = reldate, mindate = mindate, maxdate = maxdate,
+         retmode = 'xml')
 }
+
+#' @describeIn content
+setMethod("content", "elink", function(x, as = NULL) {
+  callNextMethod(x = x, as = as)
+})
 
 #' ELink Accessors
 #' 
@@ -282,32 +284,29 @@ elink <- function(uid, dbFrom=NULL, dbTo=NULL, linkname=NULL,
 #'
 #' @param x An \code{\linkS4class{elink}} object.
 #' @param i Numeric or character indices.
+#' @param j Ignored.
 #' @return A \code{\linkS4class{entrez_linkset}} object.
-#' @rdname elink-methods
-#' @export
+#' @rdname extract-elink
 #' @examples
 #' \dontrun{
 #' e <- elink(c("34577062", "24475906"), dbFrom = "nuccore")
 #' e[1]
 #' }
-setMethod("[", c("elink", "numeric"), function(x, i) {
+setMethod("[", c(x = "elink", i = "ANY", j = "missing"), function(x, i, j) {
   linkset(x, i)
 })
 
-#' @rdname elink-methods
-#' @export
+#' @rdname extract-elink
 setMethod("[", c("elink", "character"), function(x, i) {
   linkset(x, i)
 })
 
-#' @rdname linkset
-#' @export
+#' @describeIn linkset
 setMethod("linkset", "elink", function(x, linkname = NULL, ...) {
   linkset(x$get_content("parsed"), linkname=linkname, ...)
 })
 
-#' @rdname uid
-#' @export
+#' @describeIn uid
 setMethod("uid", "elink", function(x, ...) {
   uid(x$get_content("parsed"))
 })

@@ -4,8 +4,11 @@
 context("Testing 'esearch()'")
 
 if (getOption('reutils.test.remote')) {
-  a <- esearch(term="cancer", db="pubmed", reldate=60, datetype="edat", retmax=6, usehistory=TRUE)
-  b <- esearch(term="cancer", db="pubmed", reldate=60, datetype="edat", retmax=6, usehistory=FALSE)
+  ## retmode = 'xml'
+  a <- esearch(term = "cancer", db = "pubmed", reldate = 60, datetype = "edat",
+               retmax = 6, usehistory = TRUE)
+  b <- esearch(term = "cancer", db = "pubmed", reldate = 60, datetype = "edat",
+               retmax = 6, usehistory = FALSE)
   
   test_that("esearch() returns an 'esearch' object", {
     expect_is(a, "esearch")
@@ -17,6 +20,8 @@ if (getOption('reutils.test.remote')) {
     expect_that(content(b, "text"), is_a("character"))
     expect_that(content(a, "xml"), is_a("XMLInternalDocument"))
     expect_that(content(b, "xml"), is_a("XMLInternalDocument"))
+    expect_that(content(a, "json"), throws_error("Cannot return data of retmode.+"))
+    expect_that(content(b, "json"), throws_error("Cannot return data of retmode.+"))
     expect_that(content(a, 'parsed'), is_a("entrez_uid"))
     expect_that(content(b, 'parsed'), is_a("entrez_uid"))
   })
@@ -37,11 +42,65 @@ if (getOption('reutils.test.remote')) {
     expect_equal(database(b), 'pubmed')
   })
   
+  test_that("'rettype', and 'retmode' return the appropriate results", {
+    expect_equal(rettype(a), "uilist")
+    expect_match(retmode(a), "xml")
+    
+    expect_equal(rettype(b), "uilist")
+    expect_match(retmode(b), "xml")
+  })
+  
   test_that("'uid' returns a character vector for esearch objdect", {
     expect_equal(uid(a), NA_character_)
     expect_is(uid(b), "character")
     expect_equal(length(uid(b)), 6)
   })
+  
+  ## retmode = 'json'
+  a <- esearch(term = "cancer", db = "pubmed", reldate = 60, datetype = "edat",
+               retmax = 6, usehistory = TRUE, retmode = 'json')
+  b <- esearch(term = "cancer", db = "pubmed", reldate = 60, datetype = "edat",
+               retmax = 6, usehistory = FALSE, retmode = 'json')
+  
+  test_that("'content()' returns a character vector or a json object", {
+    expect_that(content(a, "text"), is_a("character"))
+    expect_that(content(b, "text"), is_a("character"))
+    expect_that(content(a, "xml"), throws_error("Cannot return data of retmode.+"))
+    expect_that(content(b, "xml"), throws_error("Cannot return data of retmode.+"))
+    expect_that(content(a, "json"), is_a("json"))
+    expect_that(content(b, "json"), is_a("json"))
+    expect_that(content(a, 'parsed'), is_a("entrez_uid"))
+    expect_that(content(b, 'parsed'), is_a("entrez_uid"))
+  })
+  
+  test_that("'retmode' returns the appropriate results", {
+    expect_match(retmode(a), "json")
+    expect_match(retmode(b), "json")
+  })
+  
+  ## rettype = 'count'
+  a <- esearch(term = "cancer", db = "pubmed", reldate = 60, datetype = "edat",
+               rettype = "count", retmode = 'xml')
+  b <- esearch(term = "cancer", db = "pubmed", reldate = 60, datetype = "edat",
+               rettype = "count", retmode = 'json')
+  
+  test_that("'content()' returns a numeric vector", {
+    expect_that(content(a, "parsed"), is_a("numeric"))
+    expect_that(content(b, "parsed"), is_a("numeric"))
+    expect_that(content(a, "xml"), is_a("XMLInternalDocument"))
+    expect_that(content(b, "json"), is_a("json"))
+  })
 }
 
+
+
+
+  
+
+  
+
+
+  
+
+  
 
