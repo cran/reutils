@@ -86,5 +86,6 @@
 #' @docType package
 #' @name reutils
 #' @aliases reutils reutils-package
+#' @importFrom methods callNextMethod is new
 #' @keywords package
 NULL

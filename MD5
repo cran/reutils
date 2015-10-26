@@ -1,12 +1,12 @@
-a7c09aefbc4d7488ec402373c8d413ce *DESCRIPTION
+61a1010c7e4ab7135463477b8d5e05e0 *DESCRIPTION
 7fbbe8515021d107113e97d3695edf0c *LICENSE
 2d9a12c042eb543752f57158e35aa653 *NAMESPACE
-5daee29e90afeed3103536bd62af0098 *NEWS
+1a38cba52ae2639fcbaaaefdaf1a1495 *NEWS
 f83ff82f238e9886321a433f842c8482 *R/ecitmatch.R
 9c0fe2b5ed7264665700e24a37b3947a *R/efetch.R
 d97f4acdc0098471cd58dc8240c0a4b3 *R/egquery.R
 448fd6797ec448f13212e1381e496053 *R/einfo.R
-05e4b23061020bf6f7a6e82eb34cc751 *R/elink.R
+cbd5ff5e52fb211425df99a46148bcc0 *R/elink.R
 592b0bae752b99bb34889cb7721a4536 *R/epost.R
 8e0a0f6d81efe34315cc6e7b50ebbac7 *R/esearch.R
 fd4a8dcaa72723f32001bb8226e11c95 *R/espell.R
@@ -15,8 +15,8 @@ fd4a8dcaa72723f32001bb8226e11c95 *R/espell.R
 c74f9c6729ee919c14a18b8215bd890a *R/eutil.R
 ba69e8cfae759a64f2b3f80ceb054e03 *R/parse-docsum.R
 e23db69235b24a4e9dee8f0159cdc999 *R/parse-params.R
-a6988e20da66e95820f0eb0ef18d6aa7 *R/reutils-package.R
-764c7b31562b1ea8bddf593ffa89932a *R/utils.R
+e8671c695f72cc28428dc8932c287aee *R/reutils-package.R
+17f7250bf7620cd07af7298c04cfd749 *R/utils.R
 d2744a58138038ce6b18fd3639cd5b4b *R/zzz.R
 3d12fe14db885703f0dad095c08a2b2c *inst/examples/reutils.R
 c3d22d88a0c6f9f9f3ceb500611b0935 *man/content.Rd
@@ -25,7 +25,7 @@ c9f3adef42c3ed80d36af45e48b8df7b *man/ecitmatch.Rd
 5c6a88f3f37ffcf37c3e7d75ef0abb0e *man/efetch.Rd
 f7a7b63f05d676aecadbc0ccf758c7a6 *man/egquery.Rd
 6129bb8b7b92b46b660d8bdc7d74a51e *man/einfo.Rd
-e196990365b04816f6ddcc36f5af176e *man/elink.Rd
+7ef03989b28fa3692cae92942d62bf83 *man/elink.Rd
 8efc8e0a55a43469c643a08b1bbec26a *man/entrez_linkset-class.Rd
 84deedf76471265226b29dbfd54b21aa *man/entrez_uid-class.Rd
 d555b09bec6099bb8ceb39f1b54d8326 *man/epost.Rd
